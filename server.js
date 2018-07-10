@@ -6,6 +6,10 @@ const mongoose = require('mongoose');
 
 mongoose.Promise = global.Promise;
 
+const bodyParser = require('body-parser');
+
+const jsonParser = bodyParser.json();
+
 //const PORT = process.env.PORT || 3000;
 const {PORT, DATABASE_URL} = require("./config");
 const { UserData } = require('./models');
@@ -15,11 +19,11 @@ app.use(express.json());
 
 //this get returns user info and all list items for user
 app.get("/api/user", (req, res) => {
-  UserData.findOne({'userName': 'test'})    
+  UserData.findOne({'username': 'bob2000'})    
     .then(user => {
       res.json({
       		user: {
-      			userName: user.userName,
+      			username: user.username,
       			firstName: user.firstName
       		},
         	foodlist: user.foodList,
@@ -42,7 +46,7 @@ app.get("/api/foodsWithinDates", (req, res) => {
 	console.log('req', req); 
   UserData
   	.findOne({
-  		userName: req.headers.username
+  		username: req.headers.username
   	})    
     .then(user => {
 
@@ -79,7 +83,7 @@ app.get("/api/symptomsWithinDates", (req, res) => {
 	console.log('req', req); 
   UserData
   	.findOne({
-  		userName: req.headers.username
+  		username: req.headers.username
   	})    
     .then(user => {
 
@@ -123,7 +127,7 @@ app.put("/api/addtofoodlist", (req, res) => {
 
 	 UserData
   	.findOne({
-  		userName: req.headers.username
+  		username: req.headers.username
   	})    
     .then(user => { 
     	user.foodList.unshift(...req.body.fooditems);
@@ -152,7 +156,7 @@ app.put("/api/addtosymptomlist", (req, res) => {
 
 	 UserData
   	.findOne({
-  		userName: req.headers.username
+  		username: req.headers.username
   	})    
     .then(user => { 
     	user.symptomList.unshift(...req.body.symptoms);
@@ -170,7 +174,7 @@ app.put("/api/addtosymptomlist", (req, res) => {
 //this is a dummy user creation endpoint 
 //needs to actually take user input 
 //currently just makes the same user each time
-app.post("/api/user", (req, res) => {
+app.post("/api/nuser", (req, res) => {
   //const requiredFields = ["name", "password", "firstname"];
   /*for (let i = 0; i < requiredFields.length; i++) {
     const field = requiredFields[i];
@@ -182,8 +186,8 @@ app.post("/api/user", (req, res) => {
   } */
 
   UserData.create({
-    userName: 'test',
-    password: 'password',
+    username: 'test2',
+    password: 'passwordpassword',
     firstName: 'Joe',
     lastName: 'Smith',
     email: 'test@test.com',
@@ -203,6 +207,147 @@ app.post("/api/user", (req, res) => {
       res.status(500).json({ message: "Internal server error" });
     });
 });
+
+
+// Post to register a new user
+app.post('/api/user', jsonParser, (req, res) => {
+  const requiredFields = ['username', 'password'];
+  const missingField = requiredFields.find(field => !(field in req.body));
+
+  if (missingField) {
+  	console.log('missing something req -',req.body);
+    return res.status(422).json({
+      code: 422,
+      reason: 'ValidationError',
+      message: 'Missing field',
+      location: missingField
+    });
+  }
+
+  const stringFields = ['username', 'password', 'firstName', 'lastName', 'email'];
+  const nonStringField = stringFields.find(
+    field => field in req.body && typeof req.body[field] !== 'string'
+  );
+
+  if (nonStringField) {
+    return res.status(422).json({
+      code: 422,
+      reason: 'ValidationError',
+      message: 'Incorrect field type: expected string',
+      location: nonStringField
+    });
+  }
+
+  // If the username and password aren't trimmed we give an error.  Users might
+  // expect that these will work without trimming (i.e. they want the password
+  // "foobar ", including the space at the end).  We need to reject such values
+  // explicitly so the users know what's happening, rather than silently
+  // trimming them and expecting the user to understand.
+  // We'll silently trim the other fields, because they aren't credentials used
+  // to log in, so it's less of a problem.
+  const explicityTrimmedFields = ['username', 'password'];
+  const nonTrimmedField = explicityTrimmedFields.find(
+    field => req.body[field].trim() !== req.body[field]
+  );
+
+  if (nonTrimmedField) {
+    return res.status(422).json({
+      code: 422,
+      reason: 'ValidationError',
+      message: 'Cannot start or end with whitespace',
+      location: nonTrimmedField
+    });
+  }
+
+  const sizedFields = {
+    username: {
+      min: 1
+    },
+    password: {
+      min: 10,
+      // bcrypt truncates after 72 characters, so let's not give the illusion
+      // of security by storing extra (unused) info
+      max: 72
+    }
+  };
+  const tooSmallField = Object.keys(sizedFields).find(
+    field =>
+      'min' in sizedFields[field] &&
+            req.body[field].trim().length < sizedFields[field].min
+  );
+  const tooLargeField = Object.keys(sizedFields).find(
+    field =>
+      'max' in sizedFields[field] &&
+            req.body[field].trim().length > sizedFields[field].max
+  );
+
+  if (tooSmallField || tooLargeField) {
+    return res.status(422).json({
+      code: 422,
+      reason: 'ValidationError',
+      message: tooSmallField
+        ? `Must be at least ${sizedFields[tooSmallField]
+          .min} characters long`
+        : `Must be at most ${sizedFields[tooLargeField]
+          .max} characters long`,
+      location: tooSmallField || tooLargeField
+    });
+  }
+
+  let {username, password, firstName = '', lastName = '', email} = req.body;
+  // Username and password come in pre-trimmed, otherwise we throw an error
+  // before this
+  firstName = firstName.trim();
+  lastName = lastName.trim();
+
+  console.log('in trim', firstName);
+
+  return UserData.find({username})
+    .count()
+    .then(count => {
+    	  console.log('in count', username);
+
+      if (count > 0) {
+        // There is an existing user with the same username
+        return Promise.reject({
+          code: 422,
+          reason: 'ValidationError',
+          message: 'Username already taken',
+          location: 'username'
+        });
+      }
+      // If there is no existing user, hash the password
+      return UserData.hashPassword(password);
+    })
+    .then(hash => {
+    	    	  console.log('in hash', hash);
+
+      return UserData.create({    
+		    username,
+		    password: hash,
+		    firstName,
+		    lastName,
+		    email
+      });
+    })
+    .then(userdata => {
+    	console.log('after create', username);
+      return res.status(201).json(userdata);
+    })
+    .catch(err => {
+      // Forward validation errors on to the client, otherwise give a 500
+      // error because something unexpected has happened
+      if (err.reason === 'ValidationError') {
+        return res.status(err.code).json(err);
+      }
+      //console.log('err', user);
+      console.log('req -',req.body);
+      console.log('err: ', err);
+
+      res.status(500).json({code: 500, message: 'Internal server error'});
+    });
+});
+
 
 let server;
 

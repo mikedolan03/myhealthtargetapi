@@ -1,5 +1,8 @@
 'use strict';
+const bcrypt = require('bcryptjs');
+
 const mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
 
 var foodSchema = new mongoose.Schema();
 
@@ -18,7 +21,7 @@ symptomSchema.add({
 });
 
 const userDataSchema = mongoose.Schema({
-	userName: {type: String, required: true},
+	username: {type: String, required: true},
 	password: {type: String, required: true},
 	firstName: {type: String, required: true},
 	lastName: String,
@@ -27,7 +30,13 @@ const userDataSchema = mongoose.Schema({
 	symptomList: [symptomSchema]
 });
 
+userDataSchema.methods.validatePassword = function(password) {
+  return bcrypt.compare(password, this.password);
+};
 
+userDataSchema.statics.hashPassword = function(password) {
+  return bcrypt.hash(password, 10);
+};
 
 //this will give a food list in most recent order
 //then we can slice and return a short list if we want
