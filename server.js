@@ -1,4 +1,5 @@
 'use strict';
+const moment = require('moment');
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -12,27 +13,165 @@ const { UserData } = require('./models');
 const app = express();
 app.use(express.json());
 
+//this get returns user info and all list items for user
 app.get("/api/user", (req, res) => {
-  UserData.find()
-    // we're limiting because restaurants db has > 25,000
-    // documents, and that's too much to process/return
-    .limit(10)
-    // success callback: for each restaurant we got back, we'll
-    // call the `.serialize` instance method we've created in
-    // models.js in order to only expose the data we want the API return.    
-    .then(users => {
+  UserData.findOne({'userName': 'test'})    
+    .then(user => {
       res.json({
-        users: users.map(user => user.foodList)
-      });
-    })
+      		user: {
+      			userName: user.userName,
+      			firstName: user.firstName
+      		},
+        	foodlist: user.foodList,
+        	symptomlist: user.symptomList
+        })
+      })
     .catch(err => {
       console.error(err);
       res.status(500).json({ message: "Internal server error" });
     });
 });
 
+//GET FOOD WITHIN DATE RANGE END POINT
+//end point to allow user to submit a time frame to get foods
+//so we can get foods that were eaten prior to a symptom
+
+//takes enddate and startdate headers
+
+app.get("/api/foodsWithinDates", (req, res) => {
+	console.log('req', req); 
+  UserData
+  	.findOne({
+  		userName: req.headers.username
+  	})    
+    .then(user => {
+
+    	console.log('req endDate:',req.headers.enddate); 
+
+			let endday = new Date(req.headers.enddate).getTime();
+
+      let startday = new Date(req.headers.startdate).getTime();
+  
+  let newFoodList = user.foodList.filter(f => {
+  	let time = new Date(f.date).getTime();
+                             return (startday < time && time < endday);
+                            });
+	console.log(newFoodList);
+
+			 
+      res.json({
+        	foodlist: newFoodList
+        })
+      })
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ message: "Internal server error" });
+    });
+});
+
+//GET Symptom WITHIN DATE RANGE END POINT
+//end point to allow user to submit a time frame to get symptoms
+//so we can get symptoms that occured after a certain food
+
+//takes enddate and startdate headers
+
+app.get("/api/symptomsWithinDates", (req, res) => {
+	console.log('req', req); 
+  UserData
+  	.findOne({
+  		userName: req.headers.username
+  	})    
+    .then(user => {
+
+    	console.log('req endDate:',req.headers.enddate); 
+
+			let endday = new Date(req.headers.enddate).getTime();
+
+      let startday = new Date(req.headers.startdate).getTime();
+  
+  let newSymptomList = user.symptomList.filter(f => {
+  	let time = new Date(f.date).getTime();
+                             return (startday < time && time < endday);
+                            });
+	console.log(newSymptomList);
+
+			 
+      res.json({
+        	symptomlist: newSymptomList
+        })
+      })
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ message: "Internal server error" });
+    });
+});
+
+
+
+//ADD FOOD END POINT
+//this end points adds foods to users food list 
+/* takes an object like this in the req.body
+{"fooditems": [
+{"name": "chilis", "tags": "red, vegetable, pepper", "date": "7/3/2018"}, 
+{"name": "oranges", "tags": "fruit, peel, citris", "date": "7/6/2018"}
+]}
+
+*/
+app.put("/api/addtofoodlist", (req, res) => {
+
+	console.log('body: ', req.body);
+
+	 UserData
+  	.findOne({
+  		userName: req.headers.username
+  	})    
+    .then(user => { 
+    	user.foodList.unshift(...req.body.fooditems);
+    	user.save();
+    	res.send(user.foodList);
+    })
+    .catch(
+      err => {
+        console.error(err);
+        res.status(500).json({message: 'Internal server error'});
+    }); 
+
+});
+
+//ADD SYMPTOM END POINT
+/* takes an object like this in the req.body
+{"symptoms": [
+{"name": "gas", "severity": "4", "date": "7/3/2018"}, 
+{"name": "pain", "severity": "6", "date": "7/6/2018"}
+]}
+
+*/
+app.put("/api/addtosymptomlist", (req, res) => {
+
+	console.log('body: ', req.body);
+
+	 UserData
+  	.findOne({
+  		userName: req.headers.username
+  	})    
+    .then(user => { 
+    	user.symptomList.unshift(...req.body.symptoms);
+    	user.save();
+    	res.send(user.symptomList);
+    })
+    .catch(
+      err => {
+        console.error(err);
+        res.status(500).json({message: 'Internal server error'});
+    }); 
+
+});
+
+//this is a dummy user creation endpoint 
+//needs to actually take user input 
+//currently just makes the same user each time
 app.post("/api/user", (req, res) => {
-  //const requiredFields = ["name", "borough", "cuisine"];
+  //const requiredFields = ["name", "password", "firstname"];
   /*for (let i = 0; i < requiredFields.length; i++) {
     const field = requiredFields[i];
     if (!(field in req.body)) {
