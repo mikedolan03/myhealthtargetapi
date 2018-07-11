@@ -14,10 +14,11 @@ foodSchema.add({
 
 var symptomSchema = new mongoose.Schema()
 
+//enum for symptoms
 symptomSchema.add({
-  name: String,
-  severity: Number,
-  date: {type: Date,  default: Date.now}
+  name: {type: String, required: true},
+  severity: {type: Number, required: true},
+  date: {type: Date, default: Date.now}
 });
 
 const userDataSchema = mongoose.Schema({
@@ -29,6 +30,13 @@ const userDataSchema = mongoose.Schema({
 	foodList: [foodSchema],
 	symptomList: [symptomSchema]
 });
+
+//const dayLog 
+// -user
+// -date
+// -foodList -fooditem - time
+// -symptomlist
+
 
 userDataSchema.methods.validatePassword = function(password) {
   return bcrypt.compare(password, this.password);
