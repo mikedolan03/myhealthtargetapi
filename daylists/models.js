@@ -20,10 +20,10 @@ symptomSchema.add({
 
 const DayListSchema = mongoose.Schema({
 	user: {
-	 	type: Schema.ObjectId,
+	 	type: mongoose.Schema.ObjectId,
 	 	ref: 'User',
 	  },
-	date: {type: Date, default: Date.now}
+	date: {type: Date, default: Date.now},
 	foodList: [foodSchema],
 	symptomList: [symptomSchema]
 });

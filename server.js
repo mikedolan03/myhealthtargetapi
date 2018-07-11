@@ -6,7 +6,7 @@ const morgan = require('morgan');
 const passport = require('passport');
 
 const {router: usersRouter} = require('./users');
-//const {router: daylistsRouter} = require('./daylists');
+const {router: daylistsRouter} = require('./daylists');
 
 const {router: authRouter, localStrategy, jwtStrategy} = require('./auth');
 mongoose.Promise = global.Promise;
@@ -43,6 +43,8 @@ app.use('/api/auth/', authRouter );
 //app.use('/api/daylists', daylistsRouter); 
 
 const jwtAuth = passport.authenticate('jwt', {session: false});
+
+app.use('/api/daylists/', jwtAuth, daylistsRouter);
 
 //sample protected endpoint
 app.get('/api/protected', jwtAuth, (req, res) => {
