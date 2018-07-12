@@ -13,7 +13,7 @@ Technology Used
 
 API
 --------------
-###Method: daylists
+###Method: daylists###
 
 #####Returns day lists for a given query.
 
