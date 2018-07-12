@@ -236,6 +236,23 @@ router.delete('/', (req, res) => {
 //   one will be submitted during creation
 //- user is adding symptom to day list thats already here - add it
 //- user is adding food to day list - add it
+
+//entry data should look like
+//{"date": "6/04/2018",
+//"fooditems": [
+//{"name": "bagel", "tags": "bread", "time": "8:00"}, 
+//{"name": "waffle", "tags": "maple syrup", "time": "7:00"}
+//]
+//}
+//or
+//{"date": "6/05/2018",
+//"symptoms": [
+//{"name": "pain", "severity": "3", "time": "8:00"}, 
+//{"name": "heartburn", "severity": "8", "time": "7:00"}
+//]
+//}
+
+
 router.post("/", (req, res) => {
 //check is the day log exists 
 DayList.findOne({
@@ -247,6 +264,34 @@ DayList.findOne({
   	 
  	 	console.log('no day list exists - lets make one');
 
+		let newList;
+
+ 	 	if(req.body.fooditems != null) {
+ 	 		  	console.log('had food items');
+
+	 	 		newList = DayList.create({
+		    	user: req.user.id,
+		    	date: req.body.date,
+		    	foodList: req.body.fooditems,
+		    	symptomList: []
+	  		});
+ 	 	} 
+ 	 	else { 
+  	console.log('no food items');
+
+ 	 		if(req.body.symptoms != null) {
+ 	 		  	console.log('had symptoms');
+
+	 	 		newList = DayList.create({
+		    	user: req.user.id,
+		    	date: req.body.date,
+		    	foodList: [],
+		    	symptomList: req.body.symptoms
+	  		});
+ 	 		} 
+ 	 	
+ 	 	}
+/*
  	let newList = DayList.create({
     	user: req.user.id,
     	date: req.body.date,
@@ -260,7 +305,7 @@ DayList.findOne({
     		{name: 'Pain', severity: '2', time: '12:00' }
     	]
   	});
-
+*/
  	newList.then(function (createdList) {
   		res.send(createdList);
 	})
@@ -271,7 +316,14 @@ DayList.findOne({
  	 } else {
  	 	 	console.log('this day list already exists');
 
- 	 	 	foundList.foodList.unshift(...req.body.fooditems);
+ 	 	 	if(req.body.fooditems != null) { 
+ 	 	 		foundList.foodList.unshift(...req.body.fooditems);
+ 	 	 	}
+
+ 	 	 	if(req.body.symptoms != null) {
+ 	 	 		 	 	 		foundList.symptomList.unshift(...req.body.symptoms);
+
+ 	 	 	}
 
     	foundList.save(function (err, foundList) {
         if (err) return res.status(400).json({message: 'Could not save bucketlist in db'});
@@ -283,6 +335,164 @@ DayList.findOne({
 
  });
 });
+
+
+function getRangeObject(startdate, enddate) {
+
+	let dateRange = { 
+									$and:[
+												{ date: {$lte:enddate} },
+												{ date: {$gte:startdate} } 
+												] 
+									}
+
+	return dateRange; 
+}
+
+//food but could modify to find tags too
+function countItem(foodArray){
+
+	let localFoodArray = foodArray.slice();
+	let localFoodArrayNames = [];
+ 
+  let itemName;
+
+	let count = 0;
+	let foodCounts = [];
+
+	for(var ii= 0; ii < foodArray.length; ii++) {
+
+		 itemName = foodArray[ii].name;
+
+		 let result = localFoodArrayNames.find( food => food === itemName );
+		 if(result) { 
+		 	console.log(itemName + 'was done already');
+		 	continue;
+		 }
+		 localFoodArrayNames.push(itemName); 
+
+	    for (var i=0; i < localFoodArray.length; i++) {
+
+	        if (localFoodArray[i].name === itemName) {
+	            count++; 
+	            localFoodArray.splice(i, 1);
+	        }
+	    }
+
+	    console.log(itemName+' counted: '+ count);
+
+	    foodCounts.push({name: itemName, count: count });
+
+	    count = 0;
+  }
+    return foodCounts; 
+}
+
+//data analysis experiment
+router.get('/getcauses/', (req, res) => {
+
+	//let symptom = 'Sick Stomach';
+
+	let ranges = [];
+
+		return DayList.find({
+				$and:[
+				{user: req.user.id}, 
+				{symptomList: {$elemMatch: {name: req.query.symptom}}} 
+				]})
+		 .then(lists => {
+
+		 		lists.map( list => { 
+
+			 	//lets entries from the last 24-48 hours
+			 	//we could make this a param and then all manner of drill downs
+			 	//can occur -1 = 24 hours -2 = 48
+			 	let dateBefore = new Date(list.date);
+				dateBefore.setDate(dateBefore.getDate() - 2);
+
+			 		ranges.push(getRangeObject(dateBefore, list.date));
+
+			   }  
+		    ); 
+
+		    console.log('ranges', ranges);
+
+		 	//for each list - take date and day before put in getrangeobj add to ranges
+
+	//ranges.push(getRangeObject('7/1/18','7/7/18'));
+	//ranges.push(getRangeObject('7/9/18','7/15/18'));
+
+
+				return DayList.find()
+				.and([
+			          { $or: ranges },
+			          {user: req.user.id}
+			      ])
+
+/*
+last working one
+return DayList.find()
+				.and([
+			          { $or: ranges },
+			          {user: req.user.id},
+			          {symptomList: {$elemMatch: {name: symptom}}}
+			      ])
+*/
+
+	/*.and([
+          { $or: [ { $and:[{date: {$lte:'7/5/18'}},{date:{$gte:'7/1/18'}} ] }, 
+                   { $and:[ {date: {$lte:'7/15/18'}}, {date:{$gte:'7/9/18'}} ] }
+          ] },
+          {user: req.user.id},
+          {symptomList: {$elemMatch: {name: symptom}}}
+      ])
+  */
+
+	/*.and(
+		{user: req.user.id},
+		{symptomList: {$elemMatch: {name: symptom}}},
+		{$or: [
+					 {$and:[
+						{date: {$lte:'7/5/18'}}, 
+						{date:{$gte:'7/4/18'}}
+						]
+					 },
+					 {$and:[
+						{date: {$lte:'7/15/18'}}, 
+						{date:{$gte:'7/10/18'}}
+						]
+					 }
+				]
+			}
+		)*/
+		 
+		})
+		 .then(rlists => {
+
+		 	console.log('ranged lists',rlists);
+
+		 	let combinedFoods = []; 
+
+		 	rlists.map( rlist => { 
+
+		 			console.log('ranged foods', rlist.foodList); 
+
+		 		combinedFoods = combinedFoods.concat(rlist.foodList); 
+
+			   });
+
+		 	let foodCounts = countItem(combinedFoods);
+
+			   let dataObject = { daylists: rlists, combinedFoods: combinedFoods, foodCounts: foodCounts};   
+
+		 	return res.json(dataObject);
+
+		 })
+		 .catch(err => {
+		 	res.status(500).json({message: 'Internal server error in get'})
+		 });
+});
+
 
 //ADD FOOD END POINT
 //this end points adds foods to users food list 

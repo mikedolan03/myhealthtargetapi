@@ -5,12 +5,11 @@ Health Target is a mobile health app that makes it easy for users to track the f
 
 Technology Used
 -----------
-* React
-* Redux
 * Node.js
 * Express.js
 * Mongodb
-* Chart.js
+* Mongoose
+
 
 API
 --------------
@@ -51,6 +50,20 @@ Example:
 
 Notes:
 
-All returned fields will always be defined, but optional fields may be empty.
+User must be logged in, all data returned will be based on user's id, Optional fields may be empty.
+
+###Method: daylists/getcauses/
+
+#####Returns day lists with 48hrs of each day of symptom, a combined food list of all foods eaten within 48hr of the symptom, and indvidual counts of how often a food was eaten prior to symptom.
+
+#####User must have auth token to run queries
+
+####Argument:
+
+**symptom** - must include a symptom query
+
+####Optional Arguments:
+
+**to do** - date ranges for overall search, and period of time prior to symptom -24, 48 etc
 
 
