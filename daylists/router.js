@@ -31,10 +31,71 @@ router.get('/', (req, res) => {
 		//should be able to find matches with ->
 		//{foodList: {$elemMatch: {tags: { '$regex': 'gluten', '$options': 'i' }}}} 
 
+//find a day list doc by day list id
+if(req.query.id != null) {
 
+			return DayList.findOne({
+				$and:[
+				{user: req.user.id}, 
+				{_id: req.query.id} 
+				]})
+		 .then(list => res.json(list))
+		 .catch(err => {
+		 	res.status(500).json({message: 'Internal server error in get'})
+		 });
+		} else {
+//find a day list based on a food id
+		if(req.query.foodid != null) {
+
+			return DayList.findOne({
+				$and:[
+				{user: req.user.id}, 
+				{foodList: {$elemMatch: {_id: req.query.foodid}}} 
+				]})
+		 .then(list => res.json(list))
+		 .catch(err => {
+		 	res.status(500).json({message: 'Internal server error in get'})
+		 });
+		} else {
+//find day list by a symptom id
+			if(req.query.symptomid != null) {
+
+			return DayList.findOne({
+				$and:[
+				{user: req.user.id}, 
+				{symptomList: {$elemMatch: {_id: req.query.symptomid}}} 
+				]})
+		 .then(list => res.json(list))
+		 .catch(err => {
+		 	res.status(500).json({message: 'Internal server error in get'})
+		 });
+		} else {
+
+//search based on a food tag - get all days where tag is present
+	if(req.query.tag != null) {
+			let startdate = "1/1/1980";
+			let enddate = "1/1/3000";
+
+			if(req.query.sdate != null) {
+				startdate = req.query.sdate;
+				enddate = req.query.edate;
+			}
+
+			return DayList.find({
+				$and:[
+				{user: req.user.id}, 
+				{date: {$lte:enddate}}, 
+				{date:{$gte:startdate}},
+				{foodList: {$elemMatch: {tags: { '$regex': req.query.tag, '$options': 'i' }}}} 
+				]})
+		 .then(lists => res.json(lists))
+		 .catch(err => {
+		 	res.status(500).json({message: 'Internal server error in get'})
+		 });
+		} else {
 //if symptom and food are passed - get all records where both 
 //were had on same day - date range optional
-if(req.query.symptom != null && req.query.food != null) {
+		if(req.query.symptom != null && req.query.food != null) {
 			let startdate = "1/1/1980";
 			let enddate = "1/1/3000";
 
@@ -139,9 +200,13 @@ if(req.query.symptom != null && req.query.food != null) {
 				 	 res.status(500).json({message: 'Internal server error in get'})
 				  });
 				 }
-	    }
+				}
+			 }
+			}
+	   }
 	  }
 	}
+}
 }
 });
 
