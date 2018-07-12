@@ -25,9 +25,9 @@ API
 **date** - Specific date for a day list
 
 **sdate/edate** - Start date/end date - returns day lists within range  
-**food** - Food item to search lists for, returns all days with that food *(can be combined with sdate/edate)*
+**food** - Food item to search lists for, returns all days with that food *(can be combined with sdate/edate and symptom)*
 
-**symptom** - Symptom to search lists for, returns all days with symptom *(can be combined with sdate/edate)*
+**symptom** - Symptom to search lists for, returns all days with symptom *(can be combined with sdate/edate and food)*
 
 **tag** - Tag of food items - returns all days where tag is present in food lists *(can be combined with sdate/edate)*
 
@@ -44,6 +44,8 @@ Example:
 /api/daylists/?sdate=7/1/2018&edate=7/5/2018&tag=gluten
 
 /api/daylists/?symptom=Pain
+
+/api/daylists/?symptom=Gas&food=donuts
 
 /api/daylists/?foodid=5b466467a474db6bc4d9146b
 
