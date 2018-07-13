@@ -86,14 +86,11 @@ describe('API Log in', function() {
 							.post('/api/daylists/')
 							.then(function(res) {
 								expect(res.status).to.equal(401)
-								return chai.request(app)
 							})
 						})
 					})
 			})
 		});
-
-	describe('API Calls to get Day List info', function() {
 
 	let newList = {	"date": "6/04/2018",
 									"fooditems": [
@@ -114,14 +111,14 @@ describe('API Log in', function() {
 						expect(res.body).to.be.a('object')
 						//expect(res.body).to.have.all.keys('places', '_id', 'user');
 					})
-		})
+		});
 
 	let addtoList = {	"date": "6/04/2018",
 									"fooditems": [
 										{"name": "chips", "tags": "potato, fried", "time": "8:00"}, 
 										{"name": "ketchup", "tags": "tomato, sugar", "time": "7:00"}
 									]
-								} 
+								}; 
 
 	it('should add food items in a users day list', function() {
 			return chai.request(app)	
@@ -134,14 +131,14 @@ describe('API Log in', function() {
 						expect(res.body).to.be.a('object')
 						//expect(res.body).to.have.all.keys('places', '_id', 'user');
 					})
-		})
+		});
 
 	let addsymtoList = {	"date": "6/04/2018",
 									"symptoms": [
 										{"name": "pain", "severity": "5", "time": "8:00"}, 
 										{"name": "headache", "severity": "3", "time": "7:00"}
 									]
-								} 
+								};
 
 	it('should add symptoms in a users day list', function() {
 			return chai.request(app)	
@@ -154,7 +151,7 @@ describe('API Log in', function() {
 						expect(res.body).to.be.a('object')
 						//expect(res.body).to.have.all.keys('places', '_id', 'user');
 					})
-		})
+		});
 
 	it('should retrieve users day lists', function() {
 			return chai.request(app)	
@@ -166,7 +163,7 @@ describe('API Log in', function() {
 						expect(res.body).to.be.a('array')
 						expect(res.body[0]).to.have.all.keys('user', '_id', 'date', 'foodList', 'symptomList', '__v');
 					})
-		})
+		});
 
 
 	let anotherdayList = {	"date": "6/05/2018",
@@ -174,7 +171,7 @@ describe('API Log in', function() {
 										{"name": "bagel", "tags": "bread", "time": "8:00"}, 
 										{"name": "waffle", "tags": "maple syrup", "time": "7:00"}
 									]
-								} 
+								}; 
 	
 
 	it('should create a new day list with food item in users day lists', function() {
@@ -188,7 +185,7 @@ describe('API Log in', function() {
 						expect(res.body).to.be.a('object')
 						//expect(res.body).to.have.all.keys('places', '_id', 'user');
 					})
-		})
+		});
 
 
 	it('should retrieve one specific day from users day lists', function() {
@@ -212,6 +209,7 @@ describe('API Log in', function() {
 					})
 					
 					
-		})
-	});
+		});
+
+
 });
