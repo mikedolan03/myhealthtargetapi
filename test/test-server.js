@@ -68,6 +68,31 @@ describe('API Log in', function() {
 			})
 	});
 
+	it('should not allow unauthorized access to api end points', function() {
+
+			return chai.request(app)
+			.post('/api/users')
+			.then(function(res) {
+				expect(res.status).to.equal(422)
+				return chai.request(app)
+				.get('/api/users')
+					.then(function(res) {
+						expect(res.status).to.equal(404)
+						return chai.request(app)
+						.get('/api/daylists/')
+						.then(function(res) {
+							expect(res.status).to.equal(401)
+							return chai.request(app)
+							.post('/api/daylists/')
+							.then(function(res) {
+								expect(res.status).to.equal(401)
+								return chai.request(app)
+							})
+						})
+					})
+			})
+		});
+
 	describe('API Calls to get Day List info', function() {
 
 	let newList = {	"date": "6/04/2018",
