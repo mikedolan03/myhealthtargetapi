@@ -183,7 +183,7 @@ describe('API Log in', function() {
 						console.log("res:", res.body)
 						expect(res).to.have.status(200)
 						expect(res.body).to.be.a('object')
-						//expect(res.body).to.have.all.keys('places', '_id', 'user');
+						expect(res.body).to.have.all.keys('user', '_id', 'date', 'foodList', 'symptomList', '__v');
 					})
 		});
 

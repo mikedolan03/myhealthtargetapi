@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const {DayList} = require('./models');
 const router = express.Router();
 const jsonParser = bodyParser.json();
+var moment = require('moment');
 
 //this is not a production end point
 //but usefull to check state of the day list collection
@@ -255,14 +256,19 @@ router.delete('/', (req, res) => {
 
 router.post("/", (req, res) => {
 //check is the day log exists 
+
+let searchDate = moment(req.body.date).format("MM-DD-YYYY")
+
 DayList.findOne({
- user: req.user.id, date: req.body.date
+ user: req.user.id, date: searchDate
  }, function(err, foundList) { 
  console.log('found:', foundList);
   if(foundList == null) {
   	console.log('didnt find it');
   	 
  	 	console.log('no day list exists - lets make one');
+
+ 	 	console.log('******************************req', req); 
 
 		let newList;
 
@@ -385,6 +391,11 @@ function countItem(foodArray){
 
 	    count = 0;
   }
+
+  foodCounts.sort(function(a, b){
+    return b.count-a.count
+	})
+
     return foodCounts; 
 }
 
