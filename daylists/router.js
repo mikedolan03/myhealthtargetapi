@@ -283,8 +283,10 @@ DayList.find({
 		{date: {$lte:req.body.date}}, 
 		{date:{$gte:searchDate}} 
 		]}, function(err, foundList) { 
- console.log('found:', foundList);
-  if(foundList == null) {
+
+ 		console.log('found:', foundList.length);
+  
+  	if(foundList.length == 0 || foundList == null || foundList == undefined) {
   	console.log('didnt find it');
   	 
  	 	console.log('no day list exists - lets make one');
@@ -295,26 +297,34 @@ DayList.find({
 
  	 	if(req.body.fooditems != null) {
  	 		  	console.log('had food items');
-
-	 	 		newList = DayList.create({
+//newList = 
+	 	 		DayList.create({
 		    	user: req.user.id,
 		    	date: req.body.date,
 		    	foodList: req.body.fooditems,
 		    	symptomList: []
-	  		});
+	  		})
+	  		.then(function (createdList) {
+  				res.send(createdList);
+				});
+
+
  	 	} 
  	 	else { 
-  	console.log('no food items');
+  			console.log('no food items');
 
  	 		if(req.body.symptoms != null) {
  	 		  	console.log('had symptoms');
-
-	 	 		newList = DayList.create({
+//newList =
+	 	 		 DayList.create({
 		    	user: req.user.id,
 		    	date: req.body.date,
 		    	foodList: [],
 		    	symptomList: req.body.symptoms
-	  		});
+	  		})
+	  		.then(function (createdList) {
+  				res.send(createdList);
+				});
  	 		} 
  	 	
  	 	}
@@ -333,28 +343,36 @@ DayList.find({
     	]
   	});
 */
- 	newList.then(function (createdList) {
-  		res.send(createdList);
-	})
+	
+	//console.log('new list:', newList);
+
+ 	//newList.then(function (createdList) {
+  //		res.send(createdList);
+	//})
  		
  
  		//no list found- create new one with added stuff
 
  	 } else {
- 	 	 	console.log('this day list already exists');
+ 	 	 	console.log('this day list already exists ', foundList[0]);
 
  	 	 	if(req.body.fooditems != null) { 
+ 	 	 		 	 	 	console.log('adding -> ', req.body.fooditems);
+
  	 	 		foundList[0].foodList.unshift(...req.body.fooditems);
  	 	 	}
 
  	 	 	if(req.body.symptoms != null) {
+ 	 	 		 	 	 		 	 	 	console.log('adding -> ', req.body.symptoms);
+
  	 	 		 	 	 		foundList[0].symptomList.unshift(...req.body.symptoms);
 
  	 	 	}  
 
     	foundList[0].save(function (err, foundList) {
-        if (err) return res.status(400).json({message: 'Could not save bucketlist in db'});
-        res.send(foundList[0]);
+        if (err) return res.status(400).json({message: 'Could not save in db'});
+        console.log('fl', foundList);
+        res.send(foundList);
     	});
 
  	 		//one found so add to it

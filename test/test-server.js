@@ -129,7 +129,6 @@ describe('API Log in', function() {
 						console.log("res:", res.body)
 						expect(res).to.have.status(200)
 						expect(res.body).to.be.a('object')
-						//expect(res.body).to.have.all.keys('places', '_id', 'user');
 					})
 		});
 
@@ -174,13 +173,13 @@ describe('API Log in', function() {
 								}; 
 	
 
-	it('should create a new day list with food item in users day lists', function() {
+	it('aa should create a new day list with food item in users day lists', function() {
 			return chai.request(app)	
 					.post('/api/daylists')
 					.set('Authorization', ('BEARER '+ authTok))
 					.send(anotherdayList)
 					.then(function(res) { 
-						console.log("res:", res.body)
+						console.log("aa res body:", res.body)
 						expect(res).to.have.status(200)
 						expect(res.body).to.be.a('object')
 						expect(res.body).to.have.all.keys('user', '_id', 'date', 'foodList', 'symptomList', '__v');
