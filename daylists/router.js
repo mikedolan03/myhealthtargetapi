@@ -5,6 +5,7 @@ const {DayList} = require('./models');
 const router = express.Router();
 const jsonParser = bodyParser.json();
 var moment = require('moment');
+moment().format();
 
 //this is not a production end point
 //but usefull to check state of the day list collection
@@ -174,7 +175,12 @@ if(req.query.id != null) {
 				user: req.user.id,
 				date: req.query.date 
 			})
-		 .then(lists => res.json(lists))
+		 .then(lists => { 
+
+		 	let data = {daylists: lists};
+
+		 	res.json(lists) 
+		 })
 		 .catch(err => {
 		 	res.status(500).json({message: 'Internal server error in get'})
 		 });
@@ -257,18 +263,33 @@ router.delete('/', (req, res) => {
 router.post("/", (req, res) => {
 //check is the day log exists 
 
-let searchDate = moment(req.body.date).format("MM-DD-YYYY")
+let searchDate; //= moment(req.body.date).format("MM-DD-YYYY")
+ 
+  searchDate = moment(req.body.date).subtract(1, 'days');
 
+
+ console.log('adding entry for day:', searchDate);
+
+
+/*
 DayList.findOne({
  user: req.user.id, date: searchDate
- }, function(err, foundList) { 
+ },
+*/
+
+DayList.find({
+		$and:[
+		{user: req.user.id}, 
+		{date: {$lte:req.body.date}}, 
+		{date:{$gte:searchDate}} 
+		]}, function(err, foundList) { 
  console.log('found:', foundList);
   if(foundList == null) {
   	console.log('didnt find it');
   	 
  	 	console.log('no day list exists - lets make one');
 
- 	 	console.log('******************************req', req); 
+ 	 //	console.log('******************************req', req); 
 
 		let newList;
 
@@ -323,17 +344,17 @@ DayList.findOne({
  	 	 	console.log('this day list already exists');
 
  	 	 	if(req.body.fooditems != null) { 
- 	 	 		foundList.foodList.unshift(...req.body.fooditems);
+ 	 	 		foundList[0].foodList.unshift(...req.body.fooditems);
  	 	 	}
 
  	 	 	if(req.body.symptoms != null) {
- 	 	 		 	 	 		foundList.symptomList.unshift(...req.body.symptoms);
+ 	 	 		 	 	 		foundList[0].symptomList.unshift(...req.body.symptoms);
 
- 	 	 	}
+ 	 	 	}  
 
-    	foundList.save(function (err, foundList) {
+    	foundList[0].save(function (err, foundList) {
         if (err) return res.status(400).json({message: 'Could not save bucketlist in db'});
-        res.send(foundList);
+        res.send(foundList[0]);
     	});
 
  	 		//one found so add to it
@@ -399,21 +420,48 @@ function countItem(foodArray){
     return foodCounts; 
 }
 
+
+
 //data analysis experiment
 router.get('/getcauses/', (req, res) => {
+
+	let symptomLists = {}; 
+
+	let todayList = {};
+
+	
 
 	//let symptom = 'Sick Stomach';
 
 	let ranges = [];
+  let today = moment()._d; 
+	let todaysdate= moment(today).format("MM-DD-YYYY");
+  let searchDate2 = moment(todaysdate).subtract(1, 'days');
 
-		return DayList.find({
+
+		return DayList.findOne({
+				$and:[
+					{user: req.user.id}, 
+					{date: {$lte:todaysdate}}, 
+					{date:{$gte:searchDate2}} 
+					]
+			})
+		 .then(lists2 => { 
+
+		 	console.log('today: ', lists2); 
+
+		 	todayList = lists2; //Object.assign({}, lists2);
+
+	    return DayList.find({
 				$and:[
 				{user: req.user.id}, 
 				{symptomList: {$elemMatch: {name: req.query.symptom}}} 
 				]})
 		 .then(lists => {
 
-		 		lists.map( list => { 
+		 	symptomLists =Object.assign({}, lists);
+
+		 	lists.map( list => { 
 
 			 	//lets entries from the last 24-48 hours
 			 	//we could make this a param and then all manner of drill downs
@@ -423,10 +471,10 @@ router.get('/getcauses/', (req, res) => {
 
 			 		ranges.push(getRangeObject(dateBefore, list.date));
 
-			   }  
+			  }  
 		    ); 
 
-		    console.log('ranges', ranges);
+		    //console.log('ranges', ranges);
 
 		 	//for each list - take date and day before put in getrangeobj add to ranges
 
@@ -439,6 +487,7 @@ router.get('/getcauses/', (req, res) => {
 			          { $or: ranges },
 			          {user: req.user.id}
 			      ])
+				.sort({date: 1})
 
 /*
 last working one
@@ -479,14 +528,15 @@ return DayList.find()
 		 
 		})
 		 .then(rlists => {
-
-		 	console.log('ranged lists',rlists);
+		 	console.log('77777777 \n \n \n \n');
+		 	//console.log('77777777ranged lists',rlists);
+		 	console.log('******************************************day list', symptomLists);
 
 		 	let combinedFoods = []; 
 
 		 	rlists.map( rlist => { 
 
-		 			console.log('ranged foods', rlist.foodList); 
+		 			//console.log('ranged foods', rlist.foodList); 
 
 		 		combinedFoods = combinedFoods.concat(rlist.foodList); 
 
@@ -494,11 +544,12 @@ return DayList.find()
 
 		 	let foodCounts = countItem(combinedFoods);
 
-			   let dataObject = { daylists: rlists, combinedFoods: combinedFoods, foodCounts: foodCounts};   
+			let dataObject = { daylists: rlists, combinedFoods: combinedFoods, foodCounts: foodCounts, symptomOnlyDays: symptomLists, todayList: todayList};   
 
 		 	return res.json(dataObject);
 
 		 })
+		})
 		 .catch(err => {
 		 	res.status(500).json({message: 'Internal server error in get'})
 		 });
