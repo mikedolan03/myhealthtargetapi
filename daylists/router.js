@@ -17,7 +17,7 @@ router.get('/all', (req, res) => {
 
 //lots of things the get can do depending on what the query is
 router.get('/', (req, res) => {
-	console.log('q= ', req.query);
+	console.log('!!!!!!!! in just get **** q= ', req.query);
 
 		//this get can handle different requests
 		//if date param is set - return the day list for that date
@@ -384,6 +384,9 @@ DayList.find({
 
 function getRangeObject(startdate, enddate) {
 
+	console.log('getting date range');
+
+
 	let dateRange = { 
 									$and:[
 												{ date: {$lte:enddate} },
@@ -396,6 +399,8 @@ function getRangeObject(startdate, enddate) {
 
 //food but could modify to find tags too
 function countItem(foodArray){
+
+	console.log('counting foods');
 
 	let localFoodArray = foodArray.slice();
 	let localFoodArrayNames = [];
@@ -411,7 +416,7 @@ function countItem(foodArray){
 
 		 let result = localFoodArrayNames.find( food => food === itemName );
 		 if(result) { 
-		 	console.log(itemName + 'was done already');
+		 //	console.log(itemName + 'was done already');
 		 	continue;
 		 }
 		 localFoodArrayNames.push(itemName); 
@@ -424,7 +429,7 @@ function countItem(foodArray){
 	        }
 	    }
 
-	    console.log(itemName+' counted: '+ count);
+	   // console.log(itemName+' counted: '+ count);
 
 	    foodCounts.push({name: itemName, count: count });
 
@@ -443,12 +448,13 @@ function countItem(foodArray){
 //data analysis experiment
 router.get('/getcauses/', (req, res) => {
 
+	console.log('****in get causes q= ', req.query);
+
 	let symptomLists = {}; 
 
 	let todayList = {};
 
 	
-
 	//let symptom = 'Sick Stomach';
 
 	let ranges = [];
@@ -473,6 +479,8 @@ router.get('/getcauses/', (req, res) => {
 	    return DayList.find({
 				$and:[
 				{user: req.user.id}, 
+				{date: {$lte:req.query.edate}}, 
+				{date:{$gte:req.query.sdate}},
 				{symptomList: {$elemMatch: {name: req.query.symptom}}} 
 				]})
 		 .then(lists => {
@@ -564,6 +572,7 @@ return DayList.find()
 
 			let dataObject = { daylists: rlists, combinedFoods: combinedFoods, foodCounts: foodCounts, symptomOnlyDays: symptomLists, todayList: todayList};   
 
+			res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
 		 	return res.json(dataObject);
 
 		 })
