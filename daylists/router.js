@@ -277,108 +277,84 @@ DayList.findOne({
  },
 */
 
-DayList.find({
+  DayList.find({
 		$and:[
 		{user: req.user.id}, 
 		{date: {$lte:req.body.date}}, 
 		{date:{$gte:searchDate}} 
-		]}, function(err, foundList) { 
+		]}, 
+		function(err, foundList) { 
 
- 		console.log('found:', foundList.length);
-  
-  	if(foundList.length == 0 || foundList == null || foundList == undefined) {
-  	console.log('didnt find it');
-  	 
- 	 	console.log('no day list exists - lets make one');
-
- 	 //	console.log('******************************req', req); 
-
-		let newList;
-
- 	 	if(req.body.fooditems != null) {
- 	 		  	console.log('had food items');
-//newList = 
-	 	 		DayList.create({
-		    	user: req.user.id,
-		    	date: req.body.date,
-		    	foodList: req.body.fooditems,
-		    	symptomList: []
-	  		})
-	  		.then(function (createdList) {
-  				res.send(createdList);
-				});
+	 		console.log('found:', foundList.length);
+	  
+	  	if(foundList.length == 0 || foundList == null || foundList == undefined) {
+	  		console.log('didnt find it');
+	  	 
+	 	 		console.log('no day list exists - lets make one');
 
 
- 	 	} 
- 	 	else { 
-  			console.log('no food items');
+				let newList;
 
- 	 		if(req.body.symptoms != null) {
- 	 		  	console.log('had symptoms');
-//newList =
-	 	 		 DayList.create({
-		    	user: req.user.id,
-		    	date: req.body.date,
-		    	foodList: [],
-		    	symptomList: req.body.symptoms
-	  		})
-	  		.then(function (createdList) {
-  				res.send(createdList);
-				});
- 	 		} 
- 	 	
- 	 	}
-/*
- 	let newList = DayList.create({
-    	user: req.user.id,
-    	date: req.body.date,
-    	foodList: [ 
-    		{name: 'cheese', tags: 'green, legume', time: '12:00'},
-    		{name: 'coffee', tags: 'vegetable, chips', time: '12:00'},
-    		{name: 'nuts', tags: 'candy, salty, fermented', time: '12:00'}
-     	],
-    	symptomList: [
-    		{name: 'Gas', severity: '5', time: '12:00' },
-    		{name: 'Pain', severity: '2', time: '12:00' }
-    	]
-  	});
-*/
-	
-	//console.log('new list:', newList);
+	 	 		if(req.body.fooditems != null) {
+	 	 		  	console.log('had food items');
+		 		
+		 		 		DayList.create({
+			    	user: req.user.id,
+			    	date: req.body.date,
+			    	foodList: req.body.fooditems,
+			    	symptomList: []
+		  			})
+		  				.then(function (createdList) {
+	  						res.send(createdList);
+							});
 
- 	//newList.then(function (createdList) {
-  //		res.send(createdList);
-	//})
- 		
- 
- 		//no list found- create new one with added stuff
 
- 	 } else {
- 	 	 	console.log('this day list already exists ', foundList[0]);
+	 	 		} 
+	 	 		else { 
+	  			console.log('no food items');
 
- 	 	 	if(req.body.fooditems != null) { 
- 	 	 		 	 	 	console.log('adding -> ', req.body.fooditems);
+	 	 			if(req.body.symptoms != null) {
+	 	 		  	console.log('had symptoms');
 
- 	 	 		foundList[0].foodList.unshift(...req.body.fooditems);
- 	 	 	}
+		 	 		 	DayList.create({
+			    		user: req.user.id,
+			    		date: req.body.date,
+			    		foodList: [],
+			    		symptomList: req.body.symptoms
+		  			})
+		  				.then(function (createdList) {
+	  						res.send(createdList);
+							});
+	 	 			} 
+	 	 	
+	 	 		}
 
- 	 	 	if(req.body.symptoms != null) {
- 	 	 		 	 	 		 	 	 	console.log('adding -> ', req.body.symptoms);
+	 	 	} else {
+	 	 	 		console.log('this day list already exists ', foundList[0]);
 
- 	 	 		 	 	 		foundList[0].symptomList.unshift(...req.body.symptoms);
+	 	 	 		if(req.body.fooditems != null) { 
+	 	 	 		 	console.log('adding -> ', req.body.fooditems);
 
- 	 	 	}  
+	 	 	 			foundList[0].foodList.unshift(...req.body.fooditems);
+	 	 	 		}
 
-    	foundList[0].save(function (err, foundList) {
-        if (err) return res.status(400).json({message: 'Could not save in db'});
-        console.log('fl', foundList);
-        res.send(foundList);
-    	});
+	 	 	 		if(req.body.symptoms != null) {
+	 	 	 		 	console.log('adding -> ', req.body.symptoms);
 
- 	 		//one found so add to it
- 	 }
+	 	 	 		 	foundList[0].symptomList.unshift(...req.body.symptoms);
 
- });
+	 	 	 		}  
+
+	    		foundList[0].save(function (err, foundList) {
+	        	if (err) return res.status(400).json({message: 'Could not save in db'});
+	        	console.log('fl', foundList);
+	        	res.send(foundList);
+	    		});
+
+	 	 		
+	 	 		}
+
+ 	});
 });
 
 
@@ -454,6 +430,8 @@ router.get('/getcauses/', (req, res) => {
 
 	let todayList = {};
 
+	let error_message = '';
+
 	
 	//let symptom = 'Sick Stomach';
 
@@ -461,9 +439,12 @@ router.get('/getcauses/', (req, res) => {
   let today = moment()._d; 
 	let todaysdate= moment(today).format("MM-DD-YYYY");
   let searchDate2 = moment(todaysdate).subtract(1, 'days');
+  let searchDate3 = moment(todaysdate).subtract(30, 'days');
 
 
-		return DayList.findOne({
+
+
+	return DayList.findOne({
 				$and:[
 					{user: req.user.id}, 
 					{date: {$lte:todaysdate}}, 
@@ -485,6 +466,49 @@ router.get('/getcauses/', (req, res) => {
 				]})
 		 			.then(lists => {
 			 			console.log('after sym search: ', lists); 
+
+			 			if(lists.length <=0) { 
+
+			 			console.log('query failed to find anything : '); 
+			 			console.log('will try to return last months entries and todays list if poss '); 
+
+
+
+			 			return DayList.find({
+							$and:[
+									{user: req.user.id}, 
+									{date: {$lte:todaysdate}}, 
+									{date:{$gte:searchDate3}} 
+									]})
+			 							.then( monthLists => { 
+
+			 							console.log('got month data : ', monthLists); 
+
+
+			 								lists = monthLists;
+
+			 								console.log('added month data to lists to continue route : ', lists);
+
+			 									//save a copy of just the symptom days to return later
+			 									symptomLists =Object.assign({}, lists);
+
+			 									error_message = "No search data";
+
+			 									return lists;
+			 							})
+			 							.catch(err => {
+		 									console.log('error: ', err);
+		 									res.status(500).json({ todayList: todayList, message: 'No search data or general data'})
+		 									});
+
+
+
+
+			 			}
+
+			 			console.log('after lists check : ', lists);
+
+
 
 			 			//save a copy of just the symptom days to return later
 			 			symptomLists =Object.assign({}, lists);
@@ -508,9 +532,9 @@ router.get('/getcauses/', (req, res) => {
 
 					})
 		 			.then(rlists => {
-		 				console.log('77777777 \n \n \n \n', rlists);
+		 				console.log('\n \n !!!!!!!!!! r lists ==  \n \n', rlists);
 
-		 				console.log('******************************************day list', symptomLists);
+		 				console.log('******************************************day list');//, symptomLists);
 
 
 
@@ -526,14 +550,17 @@ router.get('/getcauses/', (req, res) => {
 
 					 	let foodCounts = countItem(combinedFoods);
 
-						let dataObject = { daylists: rlists, combinedFoods: combinedFoods, foodCounts: foodCounts, symptomOnlyDays: symptomLists, todayList: todayList};   
+					 	console.log('combined foods*****');
 
-						res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+						let dataObject = { daylists: rlists, combinedFoods: combinedFoods, foodCounts: foodCounts, symptomOnlyDays: symptomLists, todayList: todayList, message: error_message};   
+
+						//res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
 					 	return res.json(dataObject);
 
 		 			})
 			})
 		 .catch(err => {
+		 	console.log('error: ', err);
 		 	res.status(500).json({ todayList: todayList, message: 'Problem getting data'})
 		 });
 });
