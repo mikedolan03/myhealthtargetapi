@@ -483,102 +483,58 @@ router.get('/getcauses/', (req, res) => {
 				{date:{$gte:req.query.sdate}},
 				{symptomList: {$elemMatch: {name: req.query.symptom}}} 
 				]})
-		 .then(lists => {
+		 			.then(lists => {
+			 			console.log('after sym search: ', lists); 
 
-		 	symptomLists =Object.assign({}, lists);
+			 			//save a copy of just the symptom days to return later
+			 			symptomLists =Object.assign({}, lists);
 
-		 	lists.map( list => { 
+			 			//take the days with symptoms and then get the previous 2days for each and
+			 			//create date ranges to pull those from the db
+			 			lists.map( list => { 
+						 	let dateBefore = new Date(list.date);
+							dateBefore.setDate(dateBefore.getDate() - 2);
 
-			 	//lets entries from the last 24-48 hours
-			 	//we could make this a param and then all manner of drill downs
-			 	//can occur -1 = 24 hours -2 = 48
-			 	let dateBefore = new Date(list.date);
-				dateBefore.setDate(dateBefore.getDate() - 2);
-
-			 		ranges.push(getRangeObject(dateBefore, list.date));
-
-			  }  
-		    ); 
-
-		    //console.log('ranges', ranges);
-
-		 	//for each list - take date and day before put in getrangeobj add to ranges
-
-	//ranges.push(getRangeObject('7/1/18','7/7/18'));
-	//ranges.push(getRangeObject('7/9/18','7/15/18'));
+				 			ranges.push(getRangeObject(dateBefore, list.date));
+				 		}); 
 
 
-				return DayList.find()
-				.and([
+						return DayList.find()
+							.and([
 			          { $or: ranges },
 			          {user: req.user.id}
-			      ])
-				.sort({date: 1})
+			      		])
+							.sort({date: 1})
 
-/*
-last working one
-return DayList.find()
-				.and([
-			          { $or: ranges },
-			          {user: req.user.id},
-			          {symptomList: {$elemMatch: {name: symptom}}}
-			      ])
-*/
+					})
+		 			.then(rlists => {
+		 				console.log('77777777 \n \n \n \n', rlists);
 
-	/*.and([
-          { $or: [ { $and:[{date: {$lte:'7/5/18'}},{date:{$gte:'7/1/18'}} ] }, 
-                   { $and:[ {date: {$lte:'7/15/18'}}, {date:{$gte:'7/9/18'}} ] }
-          ] },
-          {user: req.user.id},
-          {symptomList: {$elemMatch: {name: symptom}}}
-      ])
-  */
+		 				console.log('******************************************day list', symptomLists);
 
-	/*.and(
-		{user: req.user.id},
-		{symptomList: {$elemMatch: {name: symptom}}},
-		{$or: [
-					 {$and:[
-						{date: {$lte:'7/5/18'}}, 
-						{date:{$gte:'7/4/18'}}
-						]
-					 },
-					 {$and:[
-						{date: {$lte:'7/15/18'}}, 
-						{date:{$gte:'7/10/18'}}
-						]
-					 }
-				]
-			}
-		)*/
-		 
-		})
-		 .then(rlists => {
-		 	console.log('77777777 \n \n \n \n');
-		 	//console.log('77777777ranged lists',rlists);
-		 	console.log('******************************************day list', symptomLists);
 
-		 	let combinedFoods = []; 
 
-		 	rlists.map( rlist => { 
+					 	let combinedFoods = []; 
 
-		 			//console.log('ranged foods', rlist.foodList); 
+					 	rlists.map( rlist => { 
 
-		 		combinedFoods = combinedFoods.concat(rlist.foodList); 
+					 			//console.log('ranged foods', rlist.foodList); 
 
-			   });
+					 		combinedFoods = combinedFoods.concat(rlist.foodList); 
 
-		 	let foodCounts = countItem(combinedFoods);
+						   });
 
-			let dataObject = { daylists: rlists, combinedFoods: combinedFoods, foodCounts: foodCounts, symptomOnlyDays: symptomLists, todayList: todayList};   
+					 	let foodCounts = countItem(combinedFoods);
 
-			res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
-		 	return res.json(dataObject);
+						let dataObject = { daylists: rlists, combinedFoods: combinedFoods, foodCounts: foodCounts, symptomOnlyDays: symptomLists, todayList: todayList};   
 
-		 })
-		})
+						res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+					 	return res.json(dataObject);
+
+		 			})
+			})
 		 .catch(err => {
-		 	res.status(500).json({message: 'Internal server error in get'})
+		 	res.status(500).json({ todayList: todayList, message: 'Problem getting data'})
 		 });
 });
 
