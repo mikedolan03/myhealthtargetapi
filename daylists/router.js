@@ -548,6 +548,17 @@ router.get('/getcauses/', (req, res) => {
 
 						   });
 
+					 	if(rlists.length <= 0) {
+
+					 		//we must have a new user with no data
+					 							 	console.log('no data in lists updating error message');
+
+					 		error_message = "User has no recent data";
+
+					 		console.log('message: ', error_message); 
+
+					 	}
+
 					 	let foodCounts = countItem(combinedFoods);
 
 					 	console.log('combined foods*****');
