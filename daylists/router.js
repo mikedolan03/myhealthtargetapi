@@ -290,7 +290,7 @@ DayList.findOne({
 	  	if(foundList.length == 0 || foundList == null || foundList == undefined) {
 	  		console.log('didnt find it');
 	  	 
-	 	 		console.log('no day list exists - lets make one');
+	 	 		console.log('no day list exists - lets make one for date:', req.body.date);
 
 
 				let newList;
@@ -331,6 +331,8 @@ DayList.findOne({
 
 	 	 	} else {
 	 	 	 		console.log('this day list already exists ', foundList[0]);
+	 	 	 		console.log('this day:'+ foundList[0].date+ ' user date: '+req.body.date);
+
 
 	 	 	 		if(req.body.fooditems != null) { 
 	 	 	 		 	console.log('adding -> ', req.body.fooditems);
